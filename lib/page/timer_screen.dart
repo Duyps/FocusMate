@@ -66,8 +66,8 @@ class _TimerScreenState extends State<TimerScreen>
       return;
     }
 
-    const focusTime = Duration(minutes: 1);
-    const breakTime = Duration(minutes: 1);
+    const focusTime = Duration(minutes: 25);
+    const breakTime = Duration(minutes: 5);
     Duration remainingTime = widget.duration;
 
     while (remainingTime >= focusTime) {

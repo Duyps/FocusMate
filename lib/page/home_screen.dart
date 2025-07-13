@@ -1,9 +1,7 @@
 import 'package:flashcard/page/settings_screen.dart';
-import 'package:flashcard/page/stats_screen.dart';
 import 'package:flashcard/page/timer_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,8 +15,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedGoal = 'Study';
   bool skipBreak = false;
   int _currentIndex = 0;
-  int focusMinutes = 25;
-  int breakMinutes = 5;
 
   final List<String> goals = [
     'Study',
@@ -47,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (index == 1) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const StatsScreen()),
+        MaterialPageRoute(builder: (_) => const SettingsScreen()),
       );
     } else if (index == 2) {
       Navigator.push(
