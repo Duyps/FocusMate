@@ -1,7 +1,9 @@
+import 'package:flashcard/page/settings_screen.dart';
+import 'package:flashcard/page/stats_screen.dart';
+import 'package:flashcard/page/timer_screen.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,117 +13,131 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-  int streakDays = 5; // Giả lập số ngày liên tiếp đã học
+  Duration selectedDuration = const Duration(minutes: 25);
+  String selectedGoal = 'Study';
+  bool skipBreak = false;
+  int _currentIndex = 0;
+  int focusMinutes = 25;
+  int breakMinutes = 5;
 
-  // Dữ liệu mẫu các bộ từ vựng theo topic
-  final List<Map<String, dynamic>> topics = [
-    {"title": "Daily Life", "words": 300},
-    {"title": "Travel", "words": 250},
-    {"title": "Business", "words": 200},
-    {"title": "Food & Drink", "words": 180},
-    {"title": "Education", "words": 220},
-    // Thêm các topic khác...
+  final List<String> goals = [
+    'Study',
+    'Work',
+    'Relax',
+    'Sport',
+    'Entertainment',
+    'Other',
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    // Điều hướng sang các trang khác nếu cần
+  void _onStartPressed() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TimerScreen(
+          duration: selectedDuration,
+          goal: selectedGoal,
+          skipBreak: skipBreak,
+        ),
+      ),
+    );
+  }
+
+  void _onTabTapped(int index) {
+    setState(() => _currentIndex = index);
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const StatsScreen()),
+      );
+    } else if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              await GoogleSignIn().signOut();
-              if (context.mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              }
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text("Time Tracker"), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Chuỗi ngày liên tiếp đã học
-            Card(
-              color: Colors.yellow[100],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.local_fire_department,
-                      color: Colors.orange,
-                      size: 32,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      '$streakDays days streak',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
             const Text(
-              "Flashcard Topics",
+              "Select Duration",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: topics.length,
-                itemBuilder: (context, index) {
-                  final topic = topics[index];
-                  return Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.folder_open),
-                      title: Text(topic["title"]),
-                      subtitle: Text("${topic["words"]} words"),
-                      onTap: () {
-                        // TODO: Điều hướng sang trang chi tiết bộ từ vựng
-                      },
-                    ),
-                  );
+            SizedBox(
+              height: 150,
+              child: CupertinoTimerPicker(
+                mode: CupertinoTimerPickerMode.hm,
+                initialTimerDuration: selectedDuration,
+                onTimerDurationChanged: (Duration newDuration) {
+                  setState(() => selectedDuration = newDuration);
                 },
               ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Select Goal",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            DropdownButton<String>(
+              value: selectedGoal,
+              isExpanded: true,
+              items: goals
+                  .map(
+                    (goal) => DropdownMenuItem(value: goal, child: Text(goal)),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => selectedGoal = value);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const Text("Skip Break", style: TextStyle(fontSize: 16)),
+                const Spacer(),
+                Switch(
+                  value: skipBreak,
+                  onChanged: (value) {
+                    setState(() => skipBreak = value);
+                  },
+                ),
+              ],
+            ),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: _onStartPressed,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 50,
+                  vertical: 15,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: const Text("Start", style: TextStyle(fontSize: 18)),
             ),
           ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        selectedItemColor: Theme.of(context).primaryColor,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.create), label: "Create"),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Stats"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
-            label: "Library",
+            icon: Icon(Icons.settings),
+            label: "Settings",
           ),
         ],
       ),
