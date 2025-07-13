@@ -15,6 +15,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordController = TextEditingController();
   final confirmController = TextEditingController();
   final auth = FirebaseAuth.instance;
+  bool passwordVisible = false;
+  bool confirmPasswordVisible = false;
 
   Future<void> _registerWithEmail() async {
     final email = emailController.text.trim();
@@ -24,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (password != confirm) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Mật khẩu không khớp")));
+      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
       return;
     }
 
@@ -38,9 +40,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? "Đăng ký thất bại")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Registration failed")),
+      );
     }
   }
 
@@ -61,51 +63,164 @@ class _RegisterScreenState extends State<RegisterScreen> {
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Đăng ký Google thất bại")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Google registration failed")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Đăng ký")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            TextField(
+            const SizedBox(height: 100),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Sign up',
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+            TextFormField(
               controller: emailController,
-              decoration: const InputDecoration(labelText: "Email"),
+              decoration: InputDecoration(
+                labelText: "Email",
+                labelStyle: const TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            TextField(
+            const SizedBox(height: 20),
+            TextFormField(
               controller: passwordController,
-              decoration: const InputDecoration(labelText: "Mật khẩu"),
-              obscureText: true,
+              obscureText: !passwordVisible,
+              decoration: InputDecoration(
+                labelText: "Password",
+                labelStyle: const TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    passwordVisible ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () =>
+                      setState(() => passwordVisible = !passwordVisible),
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            TextField(
+            const SizedBox(height: 20),
+            TextFormField(
               controller: confirmController,
-              decoration: const InputDecoration(labelText: "Xác nhận mật khẩu"),
-              obscureText: true,
+              obscureText: !confirmPasswordVisible,
+              decoration: InputDecoration(
+                labelText: "Confirm Password",
+                labelStyle: const TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    confirmPasswordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () => setState(
+                    () => confirmPasswordVisible = !confirmPasswordVisible,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _registerWithEmail,
-              child: const Text("Đăng ký"),
+              child: const Text(
+                "Sign up",
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                minimumSize: const Size.fromHeight(48),
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 30),
+            const Text('-Or Sign up with-', style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 12),
             ElevatedButton.icon(
-              icon: const Icon(Icons.person_add),
-              label: const Text("Đăng ký bằng Google"),
+              icon: Image.asset(
+                'assets/images/google.png',
+                height: 24,
+                width: 24,
+              ),
+              label: const Text("Sign up with Google"),
               onPressed: _registerWithGoogle,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black87,
+                side: const BorderSide(color: Colors.grey),
+                minimumSize: const Size.fromHeight(48),
+              ),
             ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Đã có tài khoản? Quay lại đăng nhập"),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Already have an account?"),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Sign in now",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

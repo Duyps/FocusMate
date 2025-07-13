@@ -3,6 +3,7 @@ import 'package:flashcard/page/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Firebase Auth',
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'Poppins-ExtraLight'),
       // main.dart
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
