@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -67,6 +68,24 @@ class SettingsScreen extends StatelessWidget {
                 context,
               ).showSnackBar(const SnackBar(content: Text('Settings saved!')));
             },
+          ),
+
+          const Divider(height: 32),
+          ElevatedButton.icon(
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) {
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
+              }
+            },
+            icon: const Icon(Icons.logout),
+            label: const Text("Log out"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),

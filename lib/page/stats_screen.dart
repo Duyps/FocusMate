@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -10,161 +11,188 @@ class StatsScreen extends StatefulWidget {
   State<StatsScreen> createState() => _StatsScreenState();
 }
 
-class _StatsScreenState extends State<StatsScreen> {
-  Map<String, int> goalDurations = {};
-  bool isLoading = true;
+class _StatsScreenState extends State<StatsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
-  final List<String> goals = [
-    'Study',
-    'Work',
-    'Relax',
-    'Sport',
-    'Entertainment',
-    'Other',
-  ];
+  Map<String, int> todayStats = {};
+  Map<String, List<int>> weeklyStats = {}; // key: goal, value: list of 7 days
+  Map<String, int> monthlyStats = {};
+
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchSessionData();
+    _tabController = TabController(length: 3, vsync: this);
+    loadStats();
   }
 
-  Future<void> fetchSessionData() async {
+  Future<void> loadStats() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     final now = DateTime.now();
-    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
+    final monthStart = DateTime(now.year, now.month, 1);
 
     final snapshot = await FirebaseFirestore.instance
         .collection('sessions')
         .where('userId', isEqualTo: user.uid)
         .where(
           'timestamp',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo),
+          isGreaterThanOrEqualTo: Timestamp.fromDate(monthStart),
         )
         .get();
 
-    final Map<String, int> tempMap = {};
+    final List<QueryDocumentSnapshot> docs = snapshot.docs;
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final String goal = data['goal'] ?? 'Other';
-      final int duration = data['duration'] ?? 0;
+    final todayMap = <String, int>{};
+    final weekMap = <String, List<int>>{};
+    final monthMap = <String, int>{};
 
-      tempMap[goal] = (tempMap[goal] ?? 0) + duration;
+    for (var doc in docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final goal = data['goal'] ?? 'Other';
+      final duration = (data['duration'] ?? 0) as num;
+      final ts = (data['timestamp'] as Timestamp).toDate();
+
+      // Hôm nay
+      if (ts.isAfter(todayStart)) {
+        todayMap[goal] = (todayMap[goal] ?? 0) + duration.toInt();
+      }
+
+      // Tuần
+      if (ts.isAfter(weekStart)) {
+        int dayOffset = ts.difference(weekStart).inDays;
+        weekMap.putIfAbsent(goal, () => List.filled(7, 0));
+        weekMap[goal]![dayOffset] += duration.toInt();
+      }
+
+      // Tháng
+      monthMap[goal] = (monthMap[goal] ?? 0) + duration.toInt();
     }
 
     setState(() {
-      goalDurations = tempMap;
+      todayStats = todayMap;
+      weeklyStats = weekMap;
+      monthlyStats = monthMap;
       isLoading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final chartData = _buildChartData();
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Weekly Stats'), centerTitle: true),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Thống kê thời gian"),
+          centerTitle: true,
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: "Hôm nay"),
+              Tab(text: "Tuần"),
+              Tab(text: "Tháng"),
+            ],
+          ),
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
                 children: [
-                  const Text(
-                    'Time spent per goal (last 7 days)',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceAround,
-                        maxY: chartData.maxY.toDouble() + 10,
-                        barTouchData: BarTouchData(enabled: true),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 40,
-                              getTitlesWidget: (value, meta) {
-                                return Text(
-                                  '${value.toInt()}m',
-                                  style: const TextStyle(fontSize: 10),
-                                );
-                              },
-                            ),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                final index = value.toInt();
-                                if (index < 0 || index >= goals.length) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Transform.rotate(
-                                  angle: -0.5,
-                                  child: Text(
-                                    goals[index],
-                                    style: const TextStyle(fontSize: 10),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          topTitles: AxisTitles(),
-                          rightTitles: AxisTitles(),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        barGroups: chartData.barGroups,
-                      ),
-                    ),
-                  ),
+                  _buildTodayChart(),
+                  _buildWeeklyChart(),
+                  _buildMonthlyChart(),
                 ],
               ),
-            ),
+      ),
     );
   }
 
-  _ChartData _buildChartData() {
-    List<BarChartGroupData> groups = [];
-    int maxValue = 0;
+  Widget _buildTodayChart() {
+    if (todayStats.isEmpty)
+      return const Center(child: Text("Không có dữ liệu hôm nay"));
 
-    for (int i = 0; i < goals.length; i++) {
-      final goal = goals[i];
-      final minutes = goalDurations[goal] ?? 0;
-      maxValue = minutes > maxValue ? minutes : maxValue;
+    final total = todayStats.values.fold(0, (a, b) => a + b);
+    final sections = todayStats.entries.map((e) {
+      final percentage = (e.value / total) * 100;
+      return PieChartSectionData(
+        value: e.value.toDouble(),
+        title: "${e.key}\n${percentage.toStringAsFixed(0)}%",
+        radius: 60,
+        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+      );
+    }).toList();
 
-      groups.add(
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: minutes.toDouble(),
-              width: 20,
-              borderRadius: BorderRadius.circular(4),
-              color: Theme.of(context).colorScheme.primary,
-              backDrawRodData: BackgroundBarChartRodData(
-                show: true,
-                toY: maxValue.toDouble() + 10,
-                color: Colors.grey.shade200,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: PieChart(PieChartData(sections: sections, centerSpaceRadius: 40)),
+    );
+  }
+
+  Widget _buildWeeklyChart() {
+    if (weeklyStats.isEmpty)
+      return const Center(child: Text("Không có dữ liệu tuần này"));
+
+    final days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    final barGroups = List.generate(7, (i) {
+      final rods = weeklyStats.entries.map((entry) {
+        final value = entry.value[i].toDouble();
+        return BarChartRodData(toY: value, width: 8);
+      }).toList();
+
+      return BarChartGroupData(x: i, barRods: rods);
+    });
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) => Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(days[value.toInt()]),
+                ),
               ),
             ),
-          ],
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true, interval: 30),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          barGroups: barGroups,
+          gridData: FlGridData(show: false),
+          borderData: FlBorderData(show: false),
         ),
-      );
-    }
-
-    return _ChartData(barGroups: groups, maxY: maxValue);
+      ),
+    );
   }
-}
 
-class _ChartData {
-  final List<BarChartGroupData> barGroups;
-  final int maxY;
+  Widget _buildMonthlyChart() {
+    if (monthlyStats.isEmpty)
+      return const Center(child: Text("Không có dữ liệu tháng này"));
 
-  _ChartData({required this.barGroups, required this.maxY});
+    final total = monthlyStats.values.fold(0, (a, b) => a + b);
+    final sections = monthlyStats.entries.map((e) {
+      final percentage = (e.value / total) * 100;
+      return PieChartSectionData(
+        value: e.value.toDouble(),
+        title: "${e.key}\n${percentage.toStringAsFixed(0)}%",
+        radius: 60,
+        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+      );
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: PieChart(PieChartData(sections: sections, centerSpaceRadius: 40)),
+    );
+  }
 }

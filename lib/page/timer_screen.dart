@@ -1,6 +1,26 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+Future<void> saveSessionToFirestore({
+  required String goal,
+  required Duration duration,
+  required DateTime timestamp,
+}) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final sessionData = {
+    'userId': user.uid,
+    'goal': goal,
+    'duration': duration.inMinutes,
+    'timestamp': timestamp,
+  };
+
+  await FirebaseFirestore.instance.collection('sessions').add(sessionData);
+}
 
 class TimerScreen extends StatefulWidget {
   final Duration duration;
@@ -89,13 +109,27 @@ class _TimerScreenState extends State<TimerScreen>
     }
   }
 
-  void startCurrentPhase() {
+  void startCurrentPhase() async {
     if (currentPhaseIndex >= sessionPhases.length) {
-      // Kết thúc toàn bộ session
       setState(() {
         currentLabel = "Done";
         currentPhaseRemaining = Duration.zero;
       });
+
+      // ✅ Ghi dữ liệu lên Firestore
+      await saveSessionToFirestore(
+        goal: widget.goal,
+        duration: widget.duration,
+        timestamp: DateTime.now(),
+      );
+
+      // Optionally: tự động pop hoặc hiển thị thông báo
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      });
+
       return;
     }
 
@@ -130,7 +164,7 @@ class _TimerScreenState extends State<TimerScreen>
     countdownTimer?.cancel();
     progressController.dispose();
 
-    // Trả lại portrait khi thoát
+    // ✅ Luôn trả orientation về dọc
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -167,9 +201,24 @@ class _TimerScreenState extends State<TimerScreen>
   }
 
   Widget _buildTimerCircle() {
-    final total = sessionPhases.isEmpty
-        ? 1
-        : sessionPhases[currentPhaseIndex].duration.inSeconds;
+    if (currentPhaseIndex >= sessionPhases.length) {
+      // Đồng hồ đã kết thúc hoàn toàn
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 64),
+            SizedBox(height: 12),
+            Text(
+              "Session Completed!",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final total = sessionPhases[currentPhaseIndex].duration.inSeconds;
     final remaining = currentPhaseRemaining.inSeconds;
     final percent = total == 0 ? 1.0 : (remaining / total);
 

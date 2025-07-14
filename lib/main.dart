@@ -1,6 +1,8 @@
 import 'package:flashcard/page/home_screen.dart';
 import 'package:flashcard/page/login_screen.dart';
 import 'package:flashcard/page/settings_provider.dart';
+import 'package:flashcard/page/settings_screen.dart';
+import 'package:flashcard/page/stats_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -32,6 +34,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.light(useMaterial3: true),
       darkTheme: ThemeData.dark(useMaterial3: true),
       home: const HomeScreen(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/stats': (context) => const StatsScreen(),
+      },
     );
   }
 }
