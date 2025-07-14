@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -28,6 +29,7 @@ class TimerScreen extends StatefulWidget {
   final bool skipBreak;
   final Duration focusTime;
   final Duration breakTime;
+  final Color goalColor;
 
   const TimerScreen({
     super.key,
@@ -36,6 +38,7 @@ class TimerScreen extends StatefulWidget {
     required this.skipBreak,
     required this.focusTime,
     required this.breakTime,
+    required this.goalColor,
   });
 
   @override
@@ -222,9 +225,7 @@ class _TimerScreenState extends State<TimerScreen>
     final remaining = currentPhaseRemaining.inSeconds;
     final percent = total == 0 ? 1.0 : (remaining / total);
 
-    final color = currentLabel == "Break"
-        ? Colors.orange
-        : Theme.of(context).colorScheme.primary;
+    final color = currentLabel == "Break" ? Colors.orange : widget.goalColor;
 
     return Center(
       child: Stack(
@@ -235,7 +236,7 @@ class _TimerScreenState extends State<TimerScreen>
             height: 220,
             child: CircularProgressIndicator(
               value: percent,
-              strokeWidth: 12,
+              strokeWidth: 20,
               backgroundColor: Colors.grey.shade300,
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),

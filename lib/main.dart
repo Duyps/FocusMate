@@ -31,8 +31,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
-      theme: ThemeData.light(useMaterial3: true),
+      theme: ThemeData(
+        // 👉 Đổi màu chủ đạo ở đây (VD: xanh dương)
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue, // 🔄 Đổi thành màu bạn thích
+        ),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF9F9F9),
+      ),
       darkTheme: ThemeData.dark(useMaterial3: true),
+
       home: const HomeScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
