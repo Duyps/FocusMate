@@ -1,49 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'settings_provider.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  int focusMinutes = 25;
-  int breakMinutes = 5;
-  bool darkMode = false;
-  bool soundNotification = true;
-
-  late SharedPreferences prefs;
-
-  @override
-  void initState() {
-    super.initState();
-    loadSettings();
-  }
-
-  Future<void> loadSettings() async {
-    prefs = await SharedPreferences.getInstance();
-    setState(() {
-      focusMinutes = prefs.getInt('focusMinutes') ?? 25;
-      breakMinutes = prefs.getInt('breakMinutes') ?? 5;
-      darkMode = prefs.getBool('darkMode') ?? false;
-      soundNotification = prefs.getBool('soundNotification') ?? true;
-    });
-  }
-
-  Future<void> saveSettings() async {
-    await prefs.setInt('focusMinutes', focusMinutes);
-    await prefs.setInt('breakMinutes', breakMinutes);
-    await prefs.setBool('darkMode', darkMode);
-    await prefs.setBool('soundNotification', soundNotification);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Settings saved!')));
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<SettingsProvider>(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), centerTitle: true),
       body: ListView(
@@ -54,49 +19,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           Slider(
-            value: focusMinutes.toDouble(),
+            value: settings.focusMinutes.toDouble(),
             min: 10,
             max: 90,
             divisions: 16,
-            label: "$focusMinutes min",
+            label: "${settings.focusMinutes} min",
             onChanged: (value) {
-              setState(() => focusMinutes = value.toInt());
+              settings.updateFocusTime(value.toInt());
             },
           ),
           const SizedBox(height: 20),
           const Text(
-            "Break Time (minutes)",
+            "Break Timeê (minutes)",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           Slider(
-            value: breakMinutes.toDouble(),
+            value: settings.breakMinutes.toDouble(),
             min: 3,
             max: 30,
             divisions: 9,
-            label: "$breakMinutes min",
+            label: "${settings.breakMinutes} min",
             onChanged: (value) {
-              setState(() => breakMinutes = value.toInt());
+              settings.updateBreakTime(value.toInt());
             },
           ),
           const Divider(height: 40),
           SwitchListTile(
             title: const Text("Dark Mode"),
-            value: darkMode,
+            value: settings.darkMode,
             onChanged: (value) {
-              setState(() => darkMode = value);
+              settings.updateDarkMode(value);
             },
           ),
           SwitchListTile(
             title: const Text("Sound Notification"),
-            value: soundNotification,
+            value: settings.soundNotification,
             onChanged: (value) {
-              setState(() => soundNotification = value);
+              settings.updateSoundNotification(value);
             },
           ),
           const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: saveSettings,
-            child: const Text("Save Settings"),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.check),
+            label: const Text("Settings Saved"),
+            onPressed: () {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Settings saved!')));
+            },
           ),
         ],
       ),

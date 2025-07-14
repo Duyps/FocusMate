@@ -6,12 +6,16 @@ class TimerScreen extends StatefulWidget {
   final Duration duration;
   final String goal;
   final bool skipBreak;
+  final Duration focusTime;
+  final Duration breakTime;
 
   const TimerScreen({
     super.key,
     required this.duration,
     required this.goal,
     required this.skipBreak,
+    required this.focusTime,
+    required this.breakTime,
   });
 
   @override
@@ -66,8 +70,8 @@ class _TimerScreenState extends State<TimerScreen>
       return;
     }
 
-    const focusTime = Duration(minutes: 25);
-    const breakTime = Duration(minutes: 5);
+    final focusTime = widget.focusTime;
+    final breakTime = widget.breakTime;
     Duration remainingTime = widget.duration;
 
     while (remainingTime >= focusTime) {

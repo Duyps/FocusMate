@@ -1,7 +1,10 @@
+import 'package:flashcard/page/settings_provider.dart';
 import 'package:flashcard/page/settings_screen.dart';
+import 'package:flashcard/page/stats_screen.dart';
 import 'package:flashcard/page/timer_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedGoal = 'Study';
   bool skipBreak = false;
   int _currentIndex = 0;
+  int focusMinutes = 25;
+  int breakMinutes = 5;
 
   final List<String> goals = [
     'Study',
@@ -24,8 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
     'Entertainment',
     'Other',
   ];
+  @override
+  void initState() {
+    super.initState();
+    // Không cần loadSettings nữa
+  }
 
   void _onStartPressed() {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -33,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
           duration: selectedDuration,
           goal: selectedGoal,
           skipBreak: skipBreak,
+          focusTime: Duration(minutes: settings.focusMinutes),
+          breakTime: Duration(minutes: settings.breakMinutes),
         ),
       ),
     );
@@ -43,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (index == 1) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        MaterialPageRoute(builder: (_) => const StatsScreen()),
       );
     } else if (index == 2) {
       Navigator.push(
@@ -130,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: Theme.of(context).primaryColor,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Stats"),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Staats"),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: "Settings",
