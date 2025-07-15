@@ -89,35 +89,65 @@ class _StatsScreenState extends State<StatsScreen>
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.grey[900],
-          foregroundColor: Colors.white,
-          title: const Text("⏱️ Time Statistics"),
-          centerTitle: true,
-          bottom: TabBar(
-            controller: _tabController,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
-            indicatorColor: Colors.blueAccent,
-            tabs: const [
-              Tab(text: "Today"),
-              Tab(text: "Week"),
-              Tab(text: "Month"),
-            ],
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(100),
+          child: AppBar(
+            elevation: 0,
+            backgroundColor: const Color(0xFF1E1E1E),
+            automaticallyImplyLeading: false,
+            centerTitle: true,
+            title: const Text(
+              "Time Statistics",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(50),
+              child: Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[850],
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white54,
+                  indicatorColor: Colors.transparent,
+                  tabs: const [
+                    Tab(text: "Today"),
+                    Tab(text: "Week"),
+                    Tab(text: "Month"),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
         body: isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               )
-            : TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildTodayChart(),
-                  _buildWeeklyChart(),
-                  _buildMonthlyChart(),
-                ],
+            : Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildTodayChart(),
+                    _buildWeeklyChart(),
+                    _buildMonthlyChart(),
+                  ],
+                ),
               ),
       ),
     );
@@ -145,11 +175,14 @@ class _StatsScreenState extends State<StatsScreen>
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
+          shadows: [
+            Shadow(color: Colors.black87, offset: Offset(1, 1), blurRadius: 2),
+          ],
         ),
       );
     }).toList();
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
@@ -180,6 +213,34 @@ class _StatsScreenState extends State<StatsScreen>
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: todayStats.keys.map((goal) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: goalColors[goal] ?? Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      goal,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
@@ -199,66 +260,126 @@ class _StatsScreenState extends State<StatsScreen>
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final goalList = weeklyStats.keys.toList();
 
-    final barGroups = List.generate(7, (i) {
-      final rods = goalList.map((goal) {
-        final value = weeklyStats[goal]![i].toDouble();
-        return BarChartRodData(
-          toY: value,
-          width: 14,
-          color: goalColors[goal] ?? Colors.grey,
-          borderRadius: BorderRadius.circular(6),
-        );
-      }).toList();
-      return BarChartGroupData(x: i, barRods: rods);
-    });
-
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(24),
         ),
-
-        padding: const EdgeInsets.all(16),
-        child: BarChart(
-          BarChartData(
-            alignment: BarChartAlignment.spaceAround,
-            titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  getTitlesWidget: (value, _) => Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      days[value.toInt()],
-                      style: const TextStyle(color: Colors.white),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Weekly Focus Time by Goal",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 300,
+              child: BarChart(
+                BarChartData(
+                  barGroups: List.generate(7, (dayIndex) {
+                    return BarChartGroupData(
+                      x: dayIndex,
+                      barRods: List.generate(goalList.length, (goalIndex) {
+                        final goal = goalList[goalIndex];
+                        final value = weeklyStats[goal]![dayIndex].toDouble();
+                        return BarChartRodData(
+                          toY: value,
+                          width: 8,
+                          color: goalColors[goal] ?? Colors.grey,
+                          borderRadius: BorderRadius.circular(4),
+                        );
+                      }),
+                      showingTooltipIndicators: [0],
+                    );
+                  }),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 30,
+                        getTitlesWidget: (value, _) => Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                          ),
+                        ),
+                        reservedSize: 28,
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, _) => Text(
+                          days[value.toInt()],
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
+                  gridData: FlGridData(show: true, horizontalInterval: 30),
+                  borderData: FlBorderData(show: false),
+                  alignment: BarChartAlignment.spaceBetween,
+                  maxY: _calculateMaxY(weeklyStats),
                 ),
               ),
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 30,
-                  getTitlesWidget: (value, _) => Text(
-                    value.toInt().toString(),
-                    style: const TextStyle(color: Colors.white70, fontSize: 10),
-                  ),
-                ),
-              ),
-              rightTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-            barGroups: barGroups,
-            gridData: FlGridData(show: false),
-            borderData: FlBorderData(show: false),
-          ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: goalList.map((goal) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: goalColors[goal] ?? Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      goal,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  double _calculateMaxY(Map<String, List<int>> weeklyStats) {
+    int max = 0;
+    for (var dayValues in weeklyStats.values) {
+      for (var v in dayValues) {
+        if (v > max) max = v;
+      }
+    }
+    return ((max + 29) ~/ 30) * 30.0; // làm tròn lên bội số 30
   }
 
   Widget _buildMonthlyChart() {
@@ -272,36 +393,85 @@ class _StatsScreenState extends State<StatsScreen>
     }
 
     final total = monthlyStats.values.fold(0, (a, b) => a + b);
-    final sections = monthlyStats.entries.map((e) {
-      final percentage = (e.value / total) * 100;
+
+    final sections = monthlyStats.entries.map((entry) {
+      final percentage = (entry.value / total) * 100;
       return PieChartSectionData(
-        color: goalColors[e.key],
-        value: e.value.toDouble(),
-        title: "${e.key}\n${percentage.toStringAsFixed(0)}%",
+        color: goalColors[entry.key] ?? Colors.grey,
+        value: entry.value.toDouble(),
+        title: "${entry.key}\n${percentage.toStringAsFixed(0)}%",
         radius: 60,
         titleStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
+          shadows: [
+            Shadow(blurRadius: 3, color: Colors.black54, offset: Offset(1, 1)),
+          ],
         ),
       );
     }).toList();
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(24),
         ),
-        padding: const EdgeInsets.all(16),
-        child: PieChart(
-          PieChartData(
-            sections: sections,
-            centerSpaceRadius: 40,
-            sectionsSpace: 2,
-            borderData: FlBorderData(show: false),
-          ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Time by Goal (This Month)",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 280,
+              child: PieChart(
+                PieChartData(
+                  sections: sections,
+                  centerSpaceRadius: 40,
+                  sectionsSpace: 2,
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: monthlyStats.entries.map((entry) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: goalColors[entry.key] ?? Colors.grey,
+                      ),
+                    ),
+                    Text(
+                      "${entry.key}: ${entry.value} min",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );

@@ -38,7 +38,6 @@ class _HomeTabContentState extends State<HomeTabContent> {
   };
 
   final List<Preset> _presets = [];
-  final _storage = PresetStorage();
   final user = FirebaseAuth.instance.currentUser;
 
   @override
