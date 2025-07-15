@@ -38,7 +38,8 @@ class _HomeTabContentState extends State<HomeTabContent> {
   };
 
   final List<Preset> _presets = [];
-  final _storage = PresetStorageService();
+  final _storage = PresetStorage();
+  final user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
@@ -47,24 +48,42 @@ class _HomeTabContentState extends State<HomeTabContent> {
   }
 
   Future<void> _loadPresets() async {
-    final loaded = await _storage.loadPresets();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final presets = await PresetStorage.loadPresetsForUser(user.uid);
+    if (!mounted) return;
     setState(() {
-      _presets.addAll(loaded);
+      _presets.clear();
+      _presets.addAll(presets);
     });
   }
 
-  Future<void> _addPreset(Preset preset) async {
-    setState(() {
-      _presets.add(preset);
-    });
-    await _storage.savePresets(_presets);
+  void _addPreset(
+    String name,
+    String goal,
+    Duration duration,
+    bool skipBreak,
+  ) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final preset = Preset(
+      id: '', // Firestore sẽ tự sinh id
+      userId: user.uid,
+      name: name,
+      goal: goal,
+      duration: duration,
+      skipBreak: skipBreak,
+    );
+
+    await PresetStorage.addPreset(preset);
+    _loadPresets(); // tải lại từ Firestore
   }
 
   Future<void> _deletePreset(Preset preset) async {
-    setState(() {
-      _presets.removeWhere((p) => p.id == preset.id);
-    });
-    await _storage.savePresets(_presets);
+    await PresetStorage.deletePreset(preset.id);
+    _loadPresets(); // reload sau khi xóa
   }
 
   void _showAddPresetDialog() {
@@ -137,15 +156,23 @@ class _HomeTabContentState extends State<HomeTabContent> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user == null) return;
                     final newPreset = Preset(
                       id: const Uuid().v4(),
+                      userId: user.uid, // ✅ THÊM userId
                       name: name,
                       goal: goal,
                       duration: duration,
                       skipBreak: skipBreak,
                     );
-                    _addPreset(newPreset);
+
+                    await PresetStorage.addPreset(
+                      newPreset,
+                    ); // gọi đúng storage xử lý Firestore
+                    _loadPresets(); // reload lại list preset
+                    Navigator.pop(context);
                     Navigator.pop(context);
                   },
                   child: const Text('Save'),
@@ -172,7 +199,7 @@ class _HomeTabContentState extends State<HomeTabContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 60),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(

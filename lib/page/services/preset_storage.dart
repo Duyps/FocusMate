@@ -1,21 +1,24 @@
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flashcard/page/model/preset.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class PresetStorageService {
-  static const _key = 'user_presets';
+class PresetStorage {
+  static Future<List<Preset>> loadPresetsForUser(String userId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('presets')
+        .where('userId', isEqualTo: userId)
+        .orderBy('timestamp', descending: true)
+        .get();
 
-  Future<List<Preset>> loadPresets() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_key);
-    if (data == null) return [];
-    final List decoded = jsonDecode(data);
-    return decoded.map((e) => Preset.fromMap(e)).toList();
+    return snapshot.docs.map((doc) {
+      return Preset.fromMap(doc.id, doc.data());
+    }).toList();
   }
 
-  Future<void> savePresets(List<Preset> presets) async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(presets.map((e) => e.toMap()).toList());
-    await prefs.setString(_key, encoded);
+  static Future<void> addPreset(Preset preset) async {
+    await FirebaseFirestore.instance.collection('presets').add(preset.toMap());
+  }
+
+  static Future<void> deletePreset(String id) async {
+    await FirebaseFirestore.instance.collection('presets').doc(id).delete();
   }
 }

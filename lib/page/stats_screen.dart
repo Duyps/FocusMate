@@ -153,17 +153,34 @@ class _StatsScreenState extends State<StatsScreen>
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(24),
         ),
-        padding: const EdgeInsets.all(16),
-        child: PieChart(
-          PieChartData(
-            sections: sections,
-            centerSpaceRadius: 40,
-            sectionsSpace: 2,
-            borderData: FlBorderData(show: false),
-          ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Time by Goal (Today)",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 240,
+              child: PieChart(
+                PieChartData(
+                  sections: sections,
+                  centerSpaceRadius: 40,
+                  sectionsSpace: 2,
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -202,6 +219,7 @@ class _StatsScreenState extends State<StatsScreen>
           color: Colors.grey[900],
           borderRadius: BorderRadius.circular(16),
         ),
+
         padding: const EdgeInsets.all(16),
         child: BarChart(
           BarChartData(

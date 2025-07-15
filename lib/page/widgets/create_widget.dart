@@ -110,7 +110,7 @@ class _CreateWidgetState extends State<CreateWidget> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(30),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,6 +194,11 @@ class _CreateWidgetState extends State<CreateWidget> {
                   backgroundColor: Colors.grey[850],
                   labelStyle: TextStyle(
                     color: isSelected ? goalColors[goal] : Colors.white,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      30,
+                    ), // Tăng bo góc tại đây
                   ),
                 ),
               );
