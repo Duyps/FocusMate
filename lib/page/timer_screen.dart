@@ -186,20 +186,44 @@ class _TimerScreenState extends State<TimerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Focus on ${widget.goal}"), centerTitle: true),
-      body: isHorizontal
-          ? Row(
-              children: [
-                Expanded(child: _buildTimerCircle()),
-                Expanded(child: _buildInfoPanel()),
-              ],
-            )
-          : Column(
-              children: [
-                Expanded(child: _buildTimerCircle()),
-                _buildInfoPanel(),
-              ],
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0), // Đổi nền về màu đen
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Nội dung chính
+            isHorizontal
+                ? Row(
+                    children: [
+                      Expanded(child: _buildTimerCircle()),
+                      Expanded(child: _buildInfoPanel()),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Expanded(child: _buildTimerCircle()),
+                      _buildInfoPanel(),
+                    ],
+                  ),
+            // Nút quay lại ở góc trên bên trái
+            Positioned(
+              top: 8,
+              left: 8,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                onPressed: () {
+                  countdownTimer?.cancel();
+                  Navigator.pop(context);
+                },
+                tooltip: "Back",
+              ),
             ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -228,34 +252,84 @@ class _TimerScreenState extends State<TimerScreen>
     final color = currentLabel == "Break" ? Colors.orange : widget.goalColor;
 
     return Center(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox(
-            width: 220,
-            height: 220,
-            child: CircularProgressIndicator(
-              value: percent,
-              strokeWidth: 20,
-              backgroundColor: Colors.grey.shade300,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Lấy cạnh nhỏ nhất để làm hình vuông lớn nhất có thể
+          final size = constraints.maxWidth < constraints.maxHeight
+              ? constraints.maxWidth
+              : constraints.maxHeight;
+          final squareSize =
+              size * 0.86; // 85% diện tích, có thể chỉnh lại nếu muốn
+
+          return Container(
+            width: squareSize,
+            height: squareSize,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(50),
             ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                formatDuration(currentPhaseRemaining),
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: squareSize * 0.73, // Giữ tỉ lệ với nền
+                  height: squareSize * 0.73,
+                  child: CircularPercentIndicator(
+                    radius: squareSize * 0.365, // tương đương với width/2
+                    lineWidth: squareSize * 0.07,
+                    percent: percent.clamp(0.0, 1.0),
+                    backgroundColor: Colors.grey.shade300,
+                    progressColor: color,
+                    circularStrokeCap:
+                        CircularStrokeCap.round, // Bo tròn hai đầu
+                    /*center: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          formatDuration(currentPhaseRemaining),
+                          style: TextStyle(
+                            fontSize: squareSize * 0.11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: squareSize * 0.03),
+                        Text(
+                          currentLabel,
+                          style: TextStyle(
+                            fontSize: squareSize * 0.07,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),*/
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(currentLabel, style: const TextStyle(fontSize: 20)),
-            ],
-          ),
-        ],
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      formatDuration(currentPhaseRemaining),
+                      style: TextStyle(
+                        fontSize: squareSize * 0.11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: squareSize * 0.03),
+                    Text(
+                      currentLabel,
+                      style: TextStyle(
+                        fontSize: squareSize * 0.07,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -266,11 +340,11 @@ class _TimerScreenState extends State<TimerScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.access_time, size: 32),
+          const Icon(Icons.access_time, size: 32, color: Colors.white),
           const SizedBox(height: 8),
           Text(
             "Phase ${currentPhaseIndex + 1} of ${sessionPhases.length}",
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(fontSize: 20, color: Colors.white),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
