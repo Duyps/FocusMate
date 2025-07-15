@@ -29,16 +29,15 @@ class _HomeTabContentState extends State<HomeTabContent> {
   }
 
   final Map<String, Color> goalColors = {
-    'Study': const Color.fromARGB(255, 94, 160, 215), // xanh dương
-    'Work': const Color.fromARGB(255, 101, 195, 104), // xanh lá
-    'Relax': const Color.fromARGB(255, 255, 186, 81), // vàng
-    'Sport': const Color.fromARGB(255, 255, 117, 107), // đỏ
-    'Entertainment': const Color.fromARGB(255, 169, 95, 183), // tím
+    'Study': const Color.fromARGB(255, 94, 160, 215),
+    'Work': const Color.fromARGB(255, 101, 195, 104),
+    'Relax': const Color.fromARGB(255, 255, 186, 81),
+    'Sport': const Color.fromARGB(255, 255, 117, 107),
+    'Entertainment': const Color.fromARGB(255, 169, 95, 183),
     'Other': Colors.grey,
   };
 
   final List<Preset> _presets = [];
-  final user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
@@ -58,7 +57,7 @@ class _HomeTabContentState extends State<HomeTabContent> {
     });
   }
 
-  void _addPreset(
+  Future<void> _addPreset(
     String name,
     String goal,
     Duration duration,
@@ -68,7 +67,7 @@ class _HomeTabContentState extends State<HomeTabContent> {
     if (user == null) return;
 
     final preset = Preset(
-      id: '', // Firestore sẽ tự sinh id
+      id: const Uuid().v4(),
       userId: user.uid,
       name: name,
       goal: goal,
@@ -77,12 +76,16 @@ class _HomeTabContentState extends State<HomeTabContent> {
     );
 
     await PresetStorage.addPreset(preset);
-    _loadPresets(); // tải lại từ Firestore
+    if (mounted) {
+      await _loadPresets();
+    }
   }
 
   Future<void> _deletePreset(Preset preset) async {
     await PresetStorage.deletePreset(preset.id);
-    _loadPresets(); // reload sau khi xóa
+    if (mounted) {
+      await _loadPresets();
+    }
   }
 
   void _showAddPresetDialog() {
@@ -156,23 +159,8 @@ class _HomeTabContentState extends State<HomeTabContent> {
               actions: [
                 TextButton(
                   onPressed: () async {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user == null) return;
-                    final newPreset = Preset(
-                      id: const Uuid().v4(),
-                      userId: user.uid, // ✅ THÊM userId
-                      name: name,
-                      goal: goal,
-                      duration: duration,
-                      skipBreak: skipBreak,
-                    );
-
-                    await PresetStorage.addPreset(
-                      newPreset,
-                    ); // gọi đúng storage xử lý Firestore
-                    _loadPresets(); // reload lại list preset
-                    Navigator.pop(context);
-                    Navigator.pop(context);
+                    await _addPreset(name, goal, duration, skipBreak);
+                    if (mounted) Navigator.pop(context);
                   },
                   child: const Text('Save'),
                 ),
@@ -189,7 +177,6 @@ class _HomeTabContentState extends State<HomeTabContent> {
     final user = FirebaseAuth.instance.currentUser;
     final displayName = user?.displayName ?? user?.email?.split('@').first;
     final greeting = _getGreeting(displayName);
-    final now = DateTime.now();
     final formattedDate = DateFormat(
       'EEEE, MMM d, yyyy',
     ).format(DateTime.now());
@@ -260,7 +247,6 @@ class _HomeTabContentState extends State<HomeTabContent> {
           ),
           Row(
             children: [
-              // Icon START
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -279,25 +265,19 @@ class _HomeTabContentState extends State<HomeTabContent> {
                 },
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(shape: BoxShape.circle),
-                  child: Icon(
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
+                  child: const Icon(
                     Icons.play_circle_fill_outlined,
                     color: Colors.white,
                   ),
                 ),
               ),
-
               const SizedBox(width: 10),
-
-              // Icon DELETE
               GestureDetector(
                 onTap: () => _deletePreset(preset),
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    //color: Colors.redAccent,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
                   child: const Icon(Icons.delete_outline, color: Colors.white),
                 ),
               ),
