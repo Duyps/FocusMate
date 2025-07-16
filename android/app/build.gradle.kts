@@ -13,7 +13,7 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 android {
-    namespace = "com.example.flashcard"
+    namespace = "com.quocduy.flashcard"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.2.12479018"
 
