@@ -58,7 +58,7 @@ class _StatsScreenState extends State<StatsScreen>
     final monthMap = <String, int>{};
 
     for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data();
       final goal = data['goal'] ?? 'Other';
       final duration = (data['duration'] ?? 0) as num;
       final ts = (data['timestamp'] as Timestamp).toDate();
